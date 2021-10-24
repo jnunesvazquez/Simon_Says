@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var greenButton : Button
     lateinit var blueButton : Button
     lateinit var round : TextView
+    lateinit var buttons : HashMap<Int, Button>
 
     val redColor = Color.alpha(R.color.red)
     val greenColor = Color.alpha(R.color.green)
@@ -34,11 +35,19 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         redButton = findViewById(R.id.red_button)
         yellowButton = findViewById(R.id.yellow_button)
         greenButton = findViewById(R.id.green_button)
         blueButton = findViewById(R.id.blue_button)
+
+        buttons.put(1, greenButton)
+        buttons.put(2, redButton)
+        buttons.put(3, blueButton)
+        buttons.put(4, yellowButton)
+
         round = findViewById(R.id.round_number)
+
         val startGame : Button = findViewById(R.id.play_button)
         startGame.setOnClickListener {
             Log.i("Estado", "Comenzando partida")
@@ -64,12 +73,12 @@ class MainActivity : AppCompatActivity() {
         round.text = roundCounter.toString()
     }
 
-    private fun startSecuence(){
+    private fun startSecuence() {
         Log.i("Estado", "Se ejecuta el juego")
         runBlocking {
             launch {
                 //selectColor += (1..5).random()
-                for (i : Int in 1..roundCounter){
+                for (i in 1..roundCounter){
                     when (selectColor[i]) {
                         1 -> {
                             greenButton.setBackgroundColor(lightGreenColor)
@@ -109,6 +118,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkSecuence() : Boolean{
         Log.i("Estado", "Comprobar que la secuencia del jugador coincide")
+        var aux : Int = 0
+        var value : Button
+        if (greenButton.isPressed){
+            value = greenButton
+            aux = buttons.keys.first{value == buttons[it]}
+        }
+        if (redButton.isPressed){
+            value = redButton
+            aux = buttons.keys.first{value == buttons[it]}
+        }
+        if (blueButton.isPressed){
+            value = blueButton
+            aux = buttons.keys.first{value == buttons[it]}
+        }
+        if (yellowButton.isPressed){
+            value = yellowButton
+            aux = buttons.keys.first{value == buttons[it]}
+        }
+        for(i in 1..roundCounter){
+            return aux == selectColor[i]
+        }
         Toast.makeText(this, "Repetir secuencia", Toast.LENGTH_LONG).show()
         return true
     }
