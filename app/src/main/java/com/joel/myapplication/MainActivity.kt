@@ -12,20 +12,19 @@ import kotlinx.coroutines.*
 @DelicateCoroutinesApi
 class MainActivity : AppCompatActivity() {
 
-    var roundCounter : Int = 4
-    var selectColor : Array<Int> = arrayOf(1, 3, 3, 2, 4)
+    var roundCounter : Int = 2
+    var checkCounter : Int = roundCounter
+    var selectColor : Array<Int> = arrayOf(3,2,1,0)
+    var aux = 0
+
     lateinit var redButton : Button
     lateinit var yellowButton : Button
     lateinit var greenButton : Button
     lateinit var blueButton : Button
     lateinit var round : TextView
-    //lateinit var buttons : HashMap<Int, Button>
+    lateinit var buttons : HashMap<Int, Button>
 
     var job : Job? = null
-    var job2 : Job? = null
-    var job3 : Job? = null
-    var job4 : Job? = null
-    var jobExtra : Job? = null
 
     val redColor = Color.alpha(R.color.red)
     val greenColor = Color.alpha(R.color.green)
@@ -46,30 +45,27 @@ class MainActivity : AppCompatActivity() {
         greenButton = findViewById(R.id.green_button)
         blueButton = findViewById(R.id.blue_button)
 
-
-        /*buttons.put(1, greenButton)
-        buttons.put(2, redButton)
-        buttons.put(3, blueButton)
-        buttons.put(4, yellowButton)*/
+        buttons = HashMap()
+        buttons.put(0, greenButton)
+        buttons.put(1, redButton)
+        buttons.put(2, blueButton)
+        buttons.put(3, yellowButton)
 
         round = findViewById(R.id.round_number)
 
         val startGame : Button = findViewById(R.id.play_button)
         startGame.setOnClickListener {
             Log.i("Estado", "Comenzando partida")
-            showRound()
             job = GlobalScope.launch(Dispatchers.Main) {
-                startSecuence()
+                do {
+                    showRound()
+                    roundCounter++
+                    checkCounter = roundCounter
+                    startSecuence()
+                    putSecuence()
+                    checkSecuence()
+                }while (checkSecuence())
             }
-            /*if (checkSecuence()){
-                roundCounter++
-                showRound()
-                startSecuence()
-            }else {
-                userMessage()
-                round.visibility = TextView.INVISIBLE
-                roundCounter = 1
-            }*/
         }
     }
 
@@ -83,32 +79,27 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun startSecuence() {
         Log.i("Estado", "Se ejecuta el juego")
-        selectColor += (1..4).random()
-        for (i in 1..roundCounter){
-            when (selectColor[i]) {
-                1 -> {
-                    job = GlobalScope.launch(Dispatchers.Main) {
-                        suspendingTask(greenButton, lightGreenColor,  greenColor)
+        //selectColor += (0..3).random()
+        for (i in 0..roundCounter){
+                when (selectColor[i]) {
+                    0 -> {
+                        secuence(greenButton, lightGreenColor, greenColor)
+                        Log.i("Estado", "Has pulsado el boton amarillo")
+                    }
+                    1 -> {
+                        secuence(redButton, lightRedColor, redColor)
+                        Log.i("Estado", "Has pulsado el boton amarillo")
+                    }
+                    2 -> {
+                        secuence(blueButton, lightBlueColor, blueColor)
+                        Log.i("Estado", "Has pulsado el boton amarillo")
+                    }
+                    3 -> {
+                        secuence(yellowButton, lightYellowColor, yellowColor)
+                        Log.i("Estado", "Has pulsado el boton amarillo")
                     }
                 }
-                2 -> {
-                    job = GlobalScope.launch(Dispatchers.Main) {
-                        suspendingTask(redButton, lightRedColor,  redColor)
-                    }
-                }
-                3 -> {
-                    job = GlobalScope.launch(Dispatchers.Main) {
-                        suspendingTask(blueButton, lightBlueColor,  blueColor)
-                    }
-                }
-                4 -> {
-                    job = GlobalScope.launch(Dispatchers.Main) {
-                        suspendingTask(yellowButton, lightYellowColor,  yellowColor)
-                    }
-                }
-            }
             //Esperamos a que la corrutina activa termine
-            job?.join()
         }
     }
 
@@ -118,41 +109,42 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Empieza de nuevo", Toast.LENGTH_LONG).show()
     }
 
-    /*private fun checkSecuence() : Boolean{
+    private fun putSecuence() {
         Log.i("Estado", "Comprobar que la secuencia del jugador coincide")
-        var aux = 0
+        aux = 0
+        while (checkCounter > 0){
+            setListener(greenButton)
+            setListener(redButton)
+            setListener(blueButton)
+            setListener(yellowButton)
+        }
+    }
+
+    private fun setListener(button: Button){
         var value : Button
-        if (greenButton.isPressed){
+        button.setOnClickListener {
+            checkCounter--
             value = greenButton
             aux = buttons.keys.first{value == buttons[it]}
+            Log.i("Estado", aux.toString())
         }
-        if (redButton.isPressed){
-            value = redButton
-            aux = buttons.keys.first{value == buttons[it]}
-        }
-        if (blueButton.isPressed){
-            value = blueButton
-            aux = buttons.keys.first{value == buttons[it]}
-        }
-        if (yellowButton.isPressed){
-            value = yellowButton
-            aux = buttons.keys.first{value == buttons[it]}
-        }
-        for(i in 1..roundCounter){
+    }
+
+    private fun checkSecuence() : Boolean{
+        for(i in 0..roundCounter){
             return aux == selectColor[i]
         }
         Toast.makeText(this, "Repetir secuencia", Toast.LENGTH_LONG).show()
         return true
-    }*/
-
-    private suspend fun suspendingTask(button : Button, colorChange : Int, colorDefault: Int){
-        delay(1000)
-        button.setBackgroundColor(colorChange)
-        delay(2000)
-        button.setBackgroundColor(colorDefault)
     }
 
-    private suspend fun suspendingTaskExtra(){
-        delay(2000)
+    private suspend fun secuence(button: Button, colorChange : Int, colorDefault: Int){
+        job = GlobalScope.launch(Dispatchers.Main) {
+            delay(500)
+            button.setBackgroundColor(colorChange)
+            delay(1000)
+            button.setBackgroundColor(colorDefault)
+        }
+        job?.join()
     }
 }
