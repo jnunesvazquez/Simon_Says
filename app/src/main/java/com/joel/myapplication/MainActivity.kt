@@ -12,10 +12,9 @@ import kotlinx.coroutines.*
 @DelicateCoroutinesApi
 class MainActivity : AppCompatActivity() {
 
-    var roundCounter : Int = 2
-    var checkCounter : Int = roundCounter
-    var selectColor : Array<Int> = arrayOf(3,2,1,0)
-    var aux = 0
+    var roundCounter : Int = 0
+    var selectColor = mutableListOf<Int>()
+    var aux = mutableListOf<Int>()
 
     lateinit var redButton : Button
     lateinit var yellowButton : Button
@@ -54,17 +53,40 @@ class MainActivity : AppCompatActivity() {
         round = findViewById(R.id.round_number)
 
         val startGame : Button = findViewById(R.id.play_button)
+        val checkGame : Button = findViewById(R.id.check_button)
         startGame.setOnClickListener {
             Log.i("Estado", "Comenzando partida")
             job = GlobalScope.launch(Dispatchers.Main) {
-                do {
-                    showRound()
+                checkGame.isEnabled = false
+                startGame.isEnabled = false
+                showRound()
+                startSecuence()
+                checkGame.isEnabled = true
+                putSecuence()
+            }
+        }
+        checkGame.setOnClickListener {
+            job = GlobalScope.launch(Dispatchers.Main) {
+                if (checkSecuence()) {
                     roundCounter++
-                    checkCounter = roundCounter
+                    showRound()
+                    aux.clear()
+                    Log.i("Prueba", "Secuencia correcta")
+                    Log.i("Prueba", selectColor.toString())
+                    Log.i("Prueba", aux.toString())
                     startSecuence()
-                    putSecuence()
-                    checkSecuence()
-                }while (checkSecuence())
+                } else {
+                    Log.i("Prueba2", "Secuencia mala")
+                    Log.i("Prueba2", selectColor.toString())
+                    Log.i("Prueba2", aux.toString())
+                    userMessage()
+                    roundCounter = 0
+                    selectColor.clear()
+                    aux.clear()
+                    round.visibility = TextView.INVISIBLE
+                    showRound()
+                    startGame.isEnabled = true
+                }
             }
         }
     }
@@ -74,33 +96,34 @@ class MainActivity : AppCompatActivity() {
         if (round.visibility == TextView.INVISIBLE){
             round.visibility = TextView.VISIBLE
         }
-        round.text = roundCounter.toString()
+        //roundCounter++
+        Log.i("Estado", "roundCounter: " + roundCounter)
+        round.text = (roundCounter + 1).toString()
+        //roundCounter--
+        Log.i("Estado", "roundCounter: " + roundCounter)
     }
 
     private suspend fun startSecuence() {
         Log.i("Estado", "Se ejecuta el juego")
-        //selectColor += (0..3).random()
+        selectColor.add(roundCounter, (0..3).random())
+        Log.i("Estado", selectColor.toString())
         for (i in 0..roundCounter){
-                when (selectColor[i]) {
-                    0 -> {
-                        secuence(greenButton, lightGreenColor, greenColor)
-                        Log.i("Estado", "Has pulsado el boton amarillo")
-                    }
-                    1 -> {
-                        secuence(redButton, lightRedColor, redColor)
-                        Log.i("Estado", "Has pulsado el boton amarillo")
-                    }
-                    2 -> {
-                        secuence(blueButton, lightBlueColor, blueColor)
-                        Log.i("Estado", "Has pulsado el boton amarillo")
-                    }
-                    3 -> {
-                        secuence(yellowButton, lightYellowColor, yellowColor)
-                        Log.i("Estado", "Has pulsado el boton amarillo")
-                    }
+            when (selectColor[i]) {
+                0 -> {
+                    secuence(greenButton, lightGreenColor, greenColor)
                 }
-            //Esperamos a que la corrutina activa termine
+                1 -> {
+                    secuence(redButton, lightRedColor, redColor)
+                }
+                2 -> {
+                    secuence(blueButton, lightBlueColor, blueColor)
+                }
+                3 -> {
+                    secuence(yellowButton, lightYellowColor, yellowColor)
+                }
+            }
         }
+        Toast.makeText(this, "Repetir la secuencia", Toast.LENGTH_LONG).show()
     }
 
     private fun userMessage(){
@@ -111,31 +134,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun putSecuence() {
         Log.i("Estado", "Comprobar que la secuencia del jugador coincide")
-        aux = 0
-        while (checkCounter > 0){
-            setListener(greenButton)
-            setListener(redButton)
-            setListener(blueButton)
-            setListener(yellowButton)
-        }
+        setListener(greenButton)
+        setListener(redButton)
+        setListener(blueButton)
+        setListener(yellowButton)
     }
 
     private fun setListener(button: Button){
-        var value : Button
+        var value : Int
         button.setOnClickListener {
-            checkCounter--
-            value = greenButton
-            aux = buttons.keys.first{value == buttons[it]}
-            Log.i("Estado", aux.toString())
+            value = buttons.keys.first(){button == buttons[it]}
+            Log.i("Estado", value.toString())
+            aux.add(value)
         }
     }
 
     private fun checkSecuence() : Boolean{
-        for(i in 0..roundCounter){
-            return aux == selectColor[i]
-        }
-        Toast.makeText(this, "Repetir secuencia", Toast.LENGTH_LONG).show()
-        return true
+        //Toast.makeText(this, "Secuencia correcta", Toast.LENGTH_LONG).show()
+        return aux == selectColor
     }
 
     private suspend fun secuence(button: Button, colorChange : Int, colorDefault: Int){
@@ -145,6 +161,7 @@ class MainActivity : AppCompatActivity() {
             delay(1000)
             button.setBackgroundColor(colorDefault)
         }
+        //Esperamos a que la corrutina activa termine
         job?.join()
     }
 }
