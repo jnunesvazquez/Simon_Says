@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
     var selectColor = mutableListOf<Int>()
     var aux = mutableListOf<Int>()
 
+    lateinit var startGame : Button
     lateinit var redButton : Button
     lateinit var yellowButton : Button
     lateinit var greenButton : Button
@@ -51,42 +52,15 @@ class MainActivity : AppCompatActivity() {
         buttons.put(3, yellowButton)
 
         round = findViewById(R.id.round_number)
+        startGame = findViewById(R.id.play_button)
 
-        val startGame : Button = findViewById(R.id.play_button)
-        val checkGame : Button = findViewById(R.id.check_button)
         startGame.setOnClickListener {
             Log.i("Estado", "Comenzando partida")
             job = GlobalScope.launch(Dispatchers.Main) {
-                checkGame.isEnabled = false
                 startGame.isEnabled = false
                 showRound()
                 startSecuence()
-                checkGame.isEnabled = true
                 putSecuence()
-            }
-        }
-        checkGame.setOnClickListener {
-            job = GlobalScope.launch(Dispatchers.Main) {
-                if (checkSecuence()) {
-                    roundCounter++
-                    showRound()
-                    aux.clear()
-                    Log.i("Prueba", "Secuencia correcta")
-                    Log.i("Prueba", selectColor.toString())
-                    Log.i("Prueba", aux.toString())
-                    startSecuence()
-                } else {
-                    Log.i("Prueba2", "Secuencia mala")
-                    Log.i("Prueba2", selectColor.toString())
-                    Log.i("Prueba2", aux.toString())
-                    userMessage()
-                    roundCounter = 0
-                    selectColor.clear()
-                    aux.clear()
-                    round.visibility = TextView.INVISIBLE
-                    showRound()
-                    startGame.isEnabled = true
-                }
             }
         }
     }
@@ -96,72 +70,104 @@ class MainActivity : AppCompatActivity() {
         if (round.visibility == TextView.INVISIBLE){
             round.visibility = TextView.VISIBLE
         }
-        //roundCounter++
-        Log.i("Estado", "roundCounter: " + roundCounter)
         round.text = (roundCounter + 1).toString()
-        //roundCounter--
-        Log.i("Estado", "roundCounter: " + roundCounter)
     }
 
     private suspend fun startSecuence() {
-        Log.i("Estado", "Se ejecuta el juego")
+        Log.i("Estado", "Empieza la secuencia")
+        enableDisableButtons(buttons,false)
         selectColor.add(roundCounter, (0..3).random())
         Log.i("Estado", selectColor.toString())
         for (i in 0..roundCounter){
             when (selectColor[i]) {
-                0 -> {
-                    secuence(greenButton, lightGreenColor, greenColor)
-                }
-                1 -> {
-                    secuence(redButton, lightRedColor, redColor)
-                }
-                2 -> {
-                    secuence(blueButton, lightBlueColor, blueColor)
-                }
-                3 -> {
-                    secuence(yellowButton, lightYellowColor, yellowColor)
-                }
+                0 -> {secuence(greenButton, lightGreenColor, greenColor, 1000)}
+                1 -> {secuence(redButton, lightRedColor, redColor, 1000)}
+                2 -> {secuence(blueButton, lightBlueColor, blueColor, 1000)}
+                3 -> {secuence(yellowButton, lightYellowColor, yellowColor, 1000)}
             }
         }
+        enableDisableButtons(buttons, true)
         Toast.makeText(this, "Repetir la secuencia", Toast.LENGTH_LONG).show()
     }
 
-    private fun userMessage(){
+    private suspend fun userMessage(){
         Log.i("Estado", "Mensaje por toast al usuario")
-        Toast.makeText(this, "Has cometido un error", Toast.LENGTH_LONG).show()
-        Toast.makeText(this, "Empieza de nuevo", Toast.LENGTH_LONG).show()
+        if (checkSecuence()){
+            Toast.makeText(this, "Secuencia correcta", Toast.LENGTH_LONG).show()
+        }
+        else {
+            Toast.makeText(applicationContext, "No has introducido la secuencia correcta", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Empieza de nuevo", Toast.LENGTH_LONG).show()
+        }
     }
 
-    private fun putSecuence() {
-        Log.i("Estado", "Comprobar que la secuencia del jugador coincide")
-        setListener(greenButton)
-        setListener(redButton)
-        setListener(blueButton)
-        setListener(yellowButton)
+    private suspend fun putSecuence() {
+        Log.i("Estado", "Comprobando que la secuencia del jugador coincide")
+        setListener(greenButton, lightGreenColor, greenColor, "verde")
+        setListener(redButton, lightRedColor, redColor, "rojo")
+        setListener(blueButton, lightBlueColor, blueColor, "azul")
+        setListener(yellowButton, lightYellowColor , yellowColor, "amarillo")
+        if (checkSecuence()){
+            correctSecuence()
+        } else {
+            incorrectSecuence()
+        }
     }
 
-    private fun setListener(button: Button){
+    private fun setListener(button: Button, colorChange : Int, colorDefault: Int, nameButton: String){
         var value : Int
         button.setOnClickListener {
-            value = buttons.keys.first(){button == buttons[it]}
-            Log.i("Estado", value.toString())
+            if (button.isPressed){
+                job = GlobalScope.launch(Dispatchers.Main) {
+                    secuence(button, colorChange, colorDefault, 200)
+                }
+            }
+            Toast.makeText(this, "Has pulsado el boton $nameButton", Toast.LENGTH_LONG).show()
+            value = buttons.keys.first {button == buttons[it]}
+            Log.i("Valor", value.toString())
             aux.add(value)
         }
     }
 
-    private fun checkSecuence() : Boolean{
-        //Toast.makeText(this, "Secuencia correcta", Toast.LENGTH_LONG).show()
+    private suspend fun checkSecuence() : Boolean{
+        Toast.makeText(this, "Secuencia correcta", Toast.LENGTH_LONG).show()
+        while (selectColor.size != aux.size){
+            delay(500)
+            Log.i("Auxiliar", aux.toString())
+        }
         return aux == selectColor
     }
 
-    private suspend fun secuence(button: Button, colorChange : Int, colorDefault: Int){
+    private suspend fun secuence(button: Button, colorChange : Int, colorDefault: Int, del: Long){
         job = GlobalScope.launch(Dispatchers.Main) {
-            delay(500)
             button.setBackgroundColor(colorChange)
-            delay(1000)
+            delay(del)
             button.setBackgroundColor(colorDefault)
+            delay(500)
         }
         //Esperamos a que la corrutina activa termine
         job?.join()
+    }
+
+    private fun enableDisableButtons(hashMap: HashMap<Int, Button>, boolean: Boolean) {
+        hashMap.forEach { (_, u) -> u.isEnabled = boolean }
+    }
+
+    private suspend fun incorrectSecuence(){
+        userMessage()
+        roundCounter = 0
+        selectColor.clear()
+        aux.clear()
+        round.visibility = TextView.INVISIBLE
+        startGame.isEnabled = true
+    }
+
+    private suspend fun correctSecuence(){
+        userMessage()
+        aux.clear()
+        roundCounter++
+        showRound()
+        startSecuence()
+        putSecuence()
     }
 }

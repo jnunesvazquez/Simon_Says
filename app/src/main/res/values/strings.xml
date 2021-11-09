@@ -2,7 +2,6 @@
     <string name="app_name">Simon Dice</string>
     <string name="round_number">0</string>
     <string name="play_button">Jugar</string>
-    <string name="check_button">Comprobar</string>
     <string name="red_button">Red</string>
     <string name="blue_button">Blue</string>
     <string name="yellow_button">Yellow</string>
