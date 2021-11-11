@@ -65,6 +65,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Metodo para mostrar la ronda vigente
+     */
     private fun showRound(){
         Log.i("Estado", "Mostrar numero de rondas")
         if (round.visibility == TextView.INVISIBLE){
@@ -73,6 +76,9 @@ class MainActivity : AppCompatActivity() {
         round.text = (roundCounter + 1).toString()
     }
 
+    /**
+     * Metodo para comenzar la secuencia
+     */
     private suspend fun startSecuence() {
         Log.i("Estado", "Empieza la secuencia")
         enableDisableButtons(buttons,false)
@@ -90,6 +96,12 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Repetir la secuencia", Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Metodo que muestra un mensaje
+     * al final de la ronda dependiendo
+     * de si la secuencia introducida por el usuario
+     * es correcta o incorrecta
+     */
     private suspend fun userMessage(){
         Log.i("Estado", "Mensaje por toast al usuario")
         if (checkSecuence()){
@@ -101,12 +113,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Metodo que recibe la secuencia
+     * introducida por el usuario
+     * y comprueba la secuencia
+     */
     private suspend fun putSecuence() {
         Log.i("Estado", "Comprobando que la secuencia del jugador coincide")
-        setListener(greenButton, lightGreenColor, greenColor, "verde")
-        setListener(redButton, lightRedColor, redColor, "rojo")
-        setListener(blueButton, lightBlueColor, blueColor, "azul")
-        setListener(yellowButton, lightYellowColor , yellowColor, "amarillo")
+        setListener(greenButton, lightGreenColor, greenColor)
+        setListener(redButton, lightRedColor, redColor)
+        setListener(blueButton, lightBlueColor, blueColor)
+        setListener(yellowButton, lightYellowColor , yellowColor)
         if (checkSecuence()){
             correctSecuence()
         } else {
@@ -114,30 +131,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setListener(button: Button, colorChange : Int, colorDefault: Int, nameButton: String){
-        var value : Int
+    /**
+     * Metodo que detecta las interaccion
+     * del usuario con un boton de juego
+     *
+     * @param button Boton de juego específico
+     * @param colorChange Iluminación del boton por interacción
+     * @param colorDefault Color por defecto del boton
+     */
+    private fun setListener(button: Button, colorChange : Int, colorDefault: Int){
         button.setOnClickListener {
             if (button.isPressed){
                 job = GlobalScope.launch(Dispatchers.Main) {
                     secuence(button, colorChange, colorDefault, 200)
                 }
             }
-            Toast.makeText(this, "Has pulsado el boton $nameButton", Toast.LENGTH_LONG).show()
-            value = buttons.keys.first {button == buttons[it]}
-            Log.i("Valor", value.toString())
-            aux.add(value)
+            aux.add(buttons.keys.first {button == buttons[it]})     //Devuelve la primera clave que se comprueba en la iteración
         }
     }
 
+    /**
+     * Metodo que comprueba la secuencia
+     * introducida por el usuario con
+     * la secuencia creada por la aplicación
+     *
+     * @return La comprobación de la secuencia
+     */
     private suspend fun checkSecuence() : Boolean{
-        Toast.makeText(this, "Secuencia correcta", Toast.LENGTH_LONG).show()
         while (selectColor.size != aux.size){
             delay(500)
-            Log.i("Auxiliar", aux.toString())
         }
         return aux == selectColor
     }
 
+    /**
+     * Metodo que ejecuta la secuencia definida
+     * por la aplicación con corrutinas
+     *
+     * @param button Boton de juego específico
+     * @param colorChange Iluminación del boton por interacción
+     * @param colorDefault Color por defecto del boton
+     * @param del Retardo temporal
+     */
     private suspend fun secuence(button: Button, colorChange : Int, colorDefault: Int, del: Long){
         job = GlobalScope.launch(Dispatchers.Main) {
             button.setBackgroundColor(colorChange)
@@ -145,14 +180,24 @@ class MainActivity : AppCompatActivity() {
             button.setBackgroundColor(colorDefault)
             delay(500)
         }
-        //Esperamos a que la corrutina activa termine
-        job?.join()
+        job?.join()    //Esperamos a que la corrutina activa termine
     }
 
+    /**
+     * Metodo para habilitar o deshabilitar la interaccion del usuario
+     * con los botones mientras se ejecuta la secuencia
+     *
+     * @param hashMap Estructura de datos donde se almacenan los botones
+     * @param boolean True para habilitar y False para deshabilitar
+     */
     private fun enableDisableButtons(hashMap: HashMap<Int, Button>, boolean: Boolean) {
-        hashMap.forEach { (_, u) -> u.isEnabled = boolean }
+        hashMap.forEach { (_, button) -> button.isEnabled = boolean }
     }
 
+    /**
+     * Metodo a ejecutar cuando la secuencia introducida
+     * por el usuario sea incorrecta
+     */
     private suspend fun incorrectSecuence(){
         userMessage()
         roundCounter = 0
@@ -162,6 +207,10 @@ class MainActivity : AppCompatActivity() {
         startGame.isEnabled = true
     }
 
+    /**
+     * Metodo a ejecutar cuando la secuencia introducida
+     * por el usuario sea correcta
+     */
     private suspend fun correctSecuence(){
         userMessage()
         aux.clear()
