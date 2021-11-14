@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var greenButton : Button
     lateinit var blueButton : Button
     lateinit var round : TextView
+    lateinit var gameOver : TextView
     lateinit var buttons : HashMap<Int, Button>
     lateinit var sounds : HashMap<Int, MediaPlayer>
 
@@ -65,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         buttons.put(3, yellowButton)
 
         round = findViewById(R.id.round_number)
+        gameOver = findViewById(R.id.game_over)
         startGame = findViewById(R.id.play_button)
 
         startGame.setOnClickListener {
@@ -84,8 +86,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showRound(){
         Log.i("Estado", "Mostrar numero de rondas")
-        if (round.visibility == TextView.INVISIBLE){
+        if (round.visibility == TextView.INVISIBLE || gameOver.visibility == TextView.VISIBLE){
             round.visibility = TextView.VISIBLE
+            gameOver.visibility = TextView.INVISIBLE
         }
         round.text = (roundCounter + 1).toString()
     }
@@ -222,6 +225,7 @@ class MainActivity : AppCompatActivity() {
         selectColor.clear()
         aux.clear()
         round.visibility = TextView.INVISIBLE
+        gameOver.visibility = TextView.VISIBLE
         startGame.isEnabled = true
     }
 
