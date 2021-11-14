@@ -1,6 +1,7 @@
 package com.joel.myapplication
 
 import android.graphics.Color
+import android.media.MediaPlayer
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -16,6 +17,8 @@ class MainActivity : AppCompatActivity() {
     var selectColor = mutableListOf<Int>()
     var aux = mutableListOf<Int>()
 
+    lateinit var mainSound : MediaPlayer
+    lateinit var endSound : MediaPlayer
     lateinit var startGame : Button
     lateinit var redButton : Button
     lateinit var yellowButton : Button
@@ -23,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var blueButton : Button
     lateinit var round : TextView
     lateinit var buttons : HashMap<Int, Button>
+    lateinit var sounds : HashMap<Int, MediaPlayer>
 
     var job : Job? = null
 
@@ -45,6 +49,15 @@ class MainActivity : AppCompatActivity() {
         greenButton = findViewById(R.id.green_button)
         blueButton = findViewById(R.id.blue_button)
 
+        mainSound = MediaPlayer.create(this, R.raw.devola)
+        endSound = MediaPlayer.create(this, R.raw.sonic_level_finish)
+
+        sounds = HashMap()
+        sounds.put(0, MediaPlayer.create(this,R.raw.super_mario_1_up_sms))
+        sounds.put(1, MediaPlayer.create(this,R.raw.super_mario_coin))
+        sounds.put(2, MediaPlayer.create(this,R.raw.mario_jump))
+        sounds.put(3, MediaPlayer.create(this,R.raw.touhou_pause_effect))
+
         buttons = HashMap()
         buttons.put(0, greenButton)
         buttons.put(1, redButton)
@@ -58,6 +71,7 @@ class MainActivity : AppCompatActivity() {
             Log.i("Estado", "Comenzando partida")
             job = GlobalScope.launch(Dispatchers.Main) {
                 startGame.isEnabled = false
+                mainSound.start()
                 showRound()
                 startSecuence()
                 putSecuence()
@@ -120,10 +134,10 @@ class MainActivity : AppCompatActivity() {
      */
     private suspend fun putSecuence() {
         Log.i("Estado", "Comprobando que la secuencia del jugador coincide")
-        setListener(greenButton, lightGreenColor, greenColor)
-        setListener(redButton, lightRedColor, redColor)
-        setListener(blueButton, lightBlueColor, blueColor)
-        setListener(yellowButton, lightYellowColor , yellowColor)
+        setListener(greenButton, lightGreenColor, greenColor, 0)
+        setListener(redButton, lightRedColor, redColor, 1)
+        setListener(blueButton, lightBlueColor, blueColor, 2)
+        setListener(yellowButton, lightYellowColor , yellowColor, 3)
         if (checkSecuence()){
             correctSecuence()
         } else {
@@ -139,10 +153,11 @@ class MainActivity : AppCompatActivity() {
      * @param colorChange Iluminación del boton por interacción
      * @param colorDefault Color por defecto del boton
      */
-    private fun setListener(button: Button, colorChange : Int, colorDefault: Int){
+    private fun setListener(button: Button, colorChange : Int, colorDefault: Int, key: Int){
         button.setOnClickListener {
             if (button.isPressed){
                 job = GlobalScope.launch(Dispatchers.Main) {
+                    sounds[key]?.start()
                     secuence(button, colorChange, colorDefault, 200)
                 }
             }
@@ -175,6 +190,7 @@ class MainActivity : AppCompatActivity() {
      */
     private suspend fun secuence(button: Button, colorChange : Int, colorDefault: Int, del: Long){
         job = GlobalScope.launch(Dispatchers.Main) {
+
             button.setBackgroundColor(colorChange)
             delay(del)
             button.setBackgroundColor(colorDefault)
@@ -201,6 +217,8 @@ class MainActivity : AppCompatActivity() {
     private suspend fun incorrectSecuence(){
         userMessage()
         roundCounter = 0
+        mainSound.stop()
+        endSound.start()
         selectColor.clear()
         aux.clear()
         round.visibility = TextView.INVISIBLE
